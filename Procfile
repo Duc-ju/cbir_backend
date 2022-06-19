@@ -1,1 +1,1 @@
-web: gunicorn cbir_backend.wsgi
+web: gunicorn cbir_food_backend.wsgi
