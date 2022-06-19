@@ -1,0 +1,8 @@
+venv
+db.sqlite3
+.idea/
+*.pyc
+*.xml
+.idea/*
+*.xml
+*.iml
