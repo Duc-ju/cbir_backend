@@ -9,13 +9,15 @@ from scipy.cluster.vq import *
 from django.http import HttpResponse
 import json
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+import base64
 
-PATCH_SIZE = 15
-MRSIZE = 6.0
+PATCH_SIZE = 15 #Vùng xung quanh key-point
+MRSIZE = 6.0 #Đọc thêm
 
-RADIUS = 1
-NUM_POINTS = 8*RADIUS
-METHOD = 'uniform'
+RADIUS = 1 #Bán kính đường tròn, nằm trong vùng -> được tính
+NUM_POINTS = 8*RADIUS #Số pixel láng giềng được sử dụng
+METHOD = 'uniform' #uniform -> Chỉ giữ lại những giá trị uniform
 
 def extractSIFT(img):
   detector = cv2.xfeatures2d.SIFT_create()
@@ -48,18 +50,17 @@ def extractFeatures(img):
     return np.array(final_descriptor)
     # return descriptorsSIFT
 
-def query(image_path):
+def query(im):
     # Load the classifier, class names, scaler, number of clusters and vocabulary
     im_features, image_paths, idf, numWords, voc = joblib.load("media/bof_N_SIFT_LBP_8.pkl")
 
     # List where all the descriptors are stored
     des_list = []
 
-    im = cv2.imread(image_path)
     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
     des = extractFeatures(im)
 
-    des_list.append((image_path, des))
+    des_list.append(('current', des))
 
     # Stack all the descriptors vertically in a numpy array
     descriptors = des_list[0][1]
@@ -77,20 +78,39 @@ def query(image_path):
     # Cosine similarity
     score = np.dot(test_features, im_features.T)
     rank_ID = np.argsort(-score)
-    print(rank_ID[0][10])
     # Visualize the results
     res = []
+
     for i, ID in enumerate(rank_ID[0][0:10]):
         image_full_path = image_paths[ID]
         image_path_split = image_full_path.split('/')
         res.append(image_path_split[len(image_path_split)-1])
+
+    print(len(res))
     return res
+
+def getImage(image_path):
+    im = cv2.imread(image_path)
+    return im
 
 class QueryView(View):
 
     def get(self, request, image):
-        results = query('media/test/' + image)
+        im = getImage('media/test/' + image)
+        results = query(im)
         result_object = {
             "images": results
         }
         return HttpResponse(json.dumps(result_object))
+
+@csrf_exempt
+def queryInput(request):
+    image = request.POST['image']
+    encoded_data = image.split(',')[1]
+    nparr = np.fromstring(base64.b64decode(encoded_data), np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    results = query(img)
+    result_object = {
+        "images": results
+    }
+    return HttpResponse(json.dumps(result_object))
