@@ -6,9 +6,7 @@ from extract_patches.core import extract_patches
 from sklearn import preprocessing
 from skimage.feature import local_binary_pattern
 from scipy.cluster.vq import *
-from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
-from keras.layers import concatenate
 import json
 from django.views import View
 
@@ -45,7 +43,7 @@ def extractFeatures(img):
     # print(shape(descriptorsSIFT))
 
     for desc_tuple in zip(descriptorsSIFT, descriptorsLBP):
-        final_descriptor.append(concatenate(desc_tuple))
+        final_descriptor.append([*desc_tuple[0], *desc_tuple[1]])
 
     return np.array(final_descriptor)
     # return descriptorsSIFT

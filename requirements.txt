@@ -5,11 +5,9 @@ extract_patches==0.1.31
 joblib==1.1.0
 keras==2.9.0
 numpy==1.21.6
-opencv_python==4.6.0.66
+opencv-contrib-python==4.4.0.46
 scikit_image==0.19.3
 scikit_learn==1.1.1
 scipy==1.4.1
 scikit-image
-tensorflow
-keras
 django-cors-headers==3.11.0
