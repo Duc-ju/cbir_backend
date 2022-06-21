@@ -15,19 +15,62 @@ import base64
 PATCH_SIZE = 15 #Vùng xung quanh key-point
 MRSIZE = 6.0 #Đọc thêm
 
-RADIUS = 1 #Bán kính đường tròn, nằm trong vùng -> được tính
-NUM_POINTS = 8*RADIUS #Số pixel láng giềng được sử dụng
-METHOD = 'uniform' #uniform -> Chỉ giữ lại những giá trị uniform
-
 def extractSIFT(img):
   detector = cv2.xfeatures2d.SIFT_create()
   return detector.detectAndCompute(img, None)
+
+def extractLBPofAnImg(img):
+  def center_compare(center, pixel_list):
+      out = []
+      for pixel in pixel_list:
+          if pixel >= center:
+              out.append(1)
+          else:
+              out.append(0)
+      return out
+
+  def get_pixel(map, x, y):
+      try:
+          return map[x, y]
+      except IndexError:
+          return 0
+
+  def binary2decimal(binary_list):
+      binary_list.reverse()
+      ans = 0
+      factor = 1
+      for i in binary_list:
+          ans += i*factor
+          factor*=2
+      return ans
+  descriptor_lpb = []
+
+  height, width = img.shape
+
+  for x in range(0, width):
+      for y in range(0, height):
+          center = img[x, y]
+          top_left = get_pixel(img, x-1, y-1)
+          top_up = get_pixel(img, x, y-1)
+          top_right = get_pixel(img, x+1, y-1)
+          left = get_pixel(img, x-1, y)
+          right = get_pixel(img, x+1, y)
+          bottom_left = get_pixel(img, x-1, y+1)
+          bottom_down = get_pixel(img, x, y+1)
+          bottom_right = get_pixel(img, x+1, y+1)
+
+          neighbor_list = [top_left, top_up, top_right, right, bottom_right, bottom_down, bottom_left, left]
+          binary_list = center_compare(center, neighbor_list)
+          decimal_value = binary2decimal(binary_list)
+          descriptor_lpb.append(decimal_value/255.0)
+
+  return  descriptor_lpb
 
 def extractLBP(patches):
   descriptorsLBP = []
   for i, patch in enumerate(patches):
     # print(type(patch))
-    descriptor_LBP = local_binary_pattern(patch, NUM_POINTS, RADIUS, METHOD).flatten()
+    descriptor_LBP = extractLBPofAnImg(patch)
     # print("descriptor %d: %d" % (i, shape(descriptor_LBP)[0]))
     descriptorsLBP.append(descriptor_LBP)
   return descriptorsLBP
@@ -86,7 +129,6 @@ def query(im):
         image_path_split = image_full_path.split('/')
         res.append(image_path_split[len(image_path_split)-1])
 
-    print(len(res))
     return res
 
 def getImage(image_path):
