@@ -12,8 +12,8 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 import base64
 
-PATCH_SIZE = 15 #Vùng xung quanh key-point
-MRSIZE = 6.0 #Đọc thêm
+PATCH_SIZE = 8
+MRSIZE = 6.0
 
 def extractSIFT(img):
   detector = cv2.xfeatures2d.SIFT_create()
@@ -95,7 +95,7 @@ def extractFeatures(img):
 
 def query(im):
     # Load the classifier, class names, scaler, number of clusters and vocabulary
-    im_features, image_paths, idf, numWords, voc = joblib.load("media/bof_N_SIFT_LBP_8.pkl")
+    im_features, image_paths, idf, numWords, voc = joblib.load("media/bof_N_SIFT_LBP_15.pkl")
 
     # List where all the descriptors are stored
     des_list = []
@@ -111,6 +111,7 @@ def query(im):
     #
     test_features = np.zeros((1, numWords), "float32")
     words, distance = vq(descriptors, voc)
+    print(voc[0].shape)
     for w in words:
         test_features[0][w] += 1
 
